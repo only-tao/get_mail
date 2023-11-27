@@ -2,6 +2,13 @@ import imaplib
 import email
 from email.header import decode_header
 import os
+import re
+work_order = "4"
+save_path = "/home/tao/Desktop/embedded_system/work3-stu/"
+cn_num = {0: '零', 1: '一', 2: '二', 3: '三', 4: '四', 5: '五', 6: '六', 7: '七', 8: '八', 9: '九'}
+character_order = cn_num[int(work_order)]
+# print(character_order)
+num =0
 # 设置你的电子邮件凭证
 with open("passwd.txt", "r") as file:
     lines = file.readlines()
@@ -19,11 +26,10 @@ mail = imaplib.IMAP4_SSL("imap.exmail.qq.com")
 # 登录到你的邮箱帐户
 mail.login(email_user, email_pass)
 
-# 选择邮箱中的收件箱
+# 选择邮箱中的收件箱git
 mail.select("inbox")
 
 # 搜索邮件标题包含 "实验" 的邮件
-# search_criteria = '(SUBJECT "=?UTF-8?B?' + '实验'.encode('utf-8').hex() + '?=")'
 
 status, email_ids = mail.search(None, "ALL")
 email_ids = email_ids[0].split()
@@ -32,39 +38,30 @@ for email_id in email_ids:
     status, msg_data = mail.fetch(email_id, "(RFC822)")
     raw_email = msg_data[0][1]
     msg = email.message_from_bytes(raw_email)
+
+    #get subject and encoding 
     subject, encoding = decode_header(msg["Subject"])[0]
+      # 解码邮件主题
     if isinstance(subject, bytes):
         subject = subject.decode(encoding or "utf-8")
-    print(f"Subject: {subject}")
-    # for part in msg.walk():
-    #     if part.get_content_maintype() == "multipart":
-    #         continue
-    #     if part.get("Content-Disposition") is None:
-    #         continue
-
-    #     filename = part.get_filename()
-    #     if filename is not None:
-    #         filename = decode_header(filename)[0][0]
-    #         if filename is not None:
-    #             print(f"Downloading attachment: {filename}")
-    #             file_data = part.get_payload(decode=True)
-    #             # 将附件保存到本地
-    #             with open(filename, "wb") as f:
-    #                 f.write(file_data)
-
-    # 检查邮件是否包含附件
-    if msg.is_multipart():
-        for part in msg.walk():
-            if part.get("Content-Disposition") is not None:
-                filename = part.get_filename()
-                if filename:
-                    # 保存附件到本地文件
-                    # print("filename =",filename)
-                    filepath = os.path.join("/data/Code/file_test", subject+".pdf")
-                    print("filepath",filepath)
-                    print("#########")
-                    with open(filepath, "wb") as f:
-                        f.write(part.get_payload(decode=True))
-
+    print(f"all_Subject: {subject}")
+    
+    if f"第{work_order}次" in subject or f"第{character_order}次" in subject:
+        num +=1 
+        print("#########")
+        print(f"select_Subject: {subject}")
+        # 检查邮件是否包含附件
+        if msg.is_multipart():
+            for part in msg.walk():
+                if part.get("Content-Disposition") is not None:
+                    filename = part.get_filename()
+                    if filename:
+                        # 保存附件到本地文件
+                        filepath = os.path.join(save_path, subject + ".pdf")
+                        print("filepath", filepath)
+                        print("#########")
+                        with open(filepath, "wb") as f:
+                            f.write(part.get_payload(decode=True))
+print(f"You get {num} mails in work{work_order}")
 # 关闭连接
 mail.logout()
